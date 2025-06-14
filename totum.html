@@ -1,767 +1,348 @@
 <!DOCTYPE html>
-<<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Totum Chat</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="highlight-theme">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
     <style>
-        :root {
-            --bg: #212121;
-            --bg-light: #2a2a2a;
-            --text: #ececf1;
-            --text-dim: #a9a9a9;
-            --border: #444;
-            --primary: #10a37f; /* Llama color */
-            --danger: #ef4444;
-            --gemini: #4285f4;
-            --openai: #41A58F; /* OpenAI color */
+        html, body { height: 100%; }
+        .sidebar { 
+            width: 280px; 
+            background-color: var(--bs-dark-bg-subtle) !important;
+            border-right: 1px solid var(--bs-border-color);
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Layout */
-        .app-container { display: flex; height: 100vh; }
-        
-        .sidebar {
-            width: 260px;
-            background: #171717;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 12px;
-        }
-
-        .main-content {
+        .chat-container { 
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            overflow-y: auto; 
+            max-height: calc(100vh - 140px);
         }
-
-        /* Buttons */
-        button {
-            background: var(--bg-light);
-            color: var(--text);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 8px 12px;
-            cursor: pointer;
+        .message-avatar { 
+            width: 32px; 
+            height: 32px; 
             font-size: 14px;
-        }
-
-        button:hover { background: #3a3a3a; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .btn-primary { background: var(--primary); border-color: var(--primary); }
-        .btn-primary:hover { background: #0d8f6f; }
-        .btn-danger { background: var(--danger); border-color: var(--danger); }
-
-        /* Inputs */
-        input, select, textarea {
-            background: var(--bg-light);
-            color: var(--text);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        /* Sidebar */
-        .new-chat-btn {
-            width: 100%;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .new-chat-btn::before { content: '+'; font-size: 18px; }
-
-        .sessions-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 12px;
-        }
-
-        .session-item {
-            padding: 8px 12px;
-            margin-bottom: 2px;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .session-item:hover, .session-item.active { background: var(--bg-light); }
-        .session-item .delete-btn { opacity: 0; background: none; border: none; color: var(--danger); }
-        .session-item:hover .delete-btn { opacity: 1; }
-
-        .save-session-btn { width: 100%; margin-bottom: 12px; }
-
-        .model-type-toggle {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 8px;
-        }
-
-        .model-type-btn {
-            flex: 1;
-            padding: 6px 8px;
-            font-size: 13px;
-        }
-
-        .model-type-btn.active.gemini { background: var(--gemini); border-color: var(--gemini); }
-        .model-type-btn.active.llama { background: var(--primary); border-color: var(--primary); }
-        .model-type-btn.active.openai { background: var(--openai); border-color: var(--openai); }
-
-
-        .config-input {
-            width: 100%;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .sidebar-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .sidebar-actions button { flex: 1; }
-
-        /* Chat */
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 0;
-        }
-
-        .chat-message {
-            padding: 24px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .chat-message:last-child { border-bottom: none; }
-
-        .message-content {
-            max-width: 768px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            gap: 24px;
-        }
-
-        .message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 500;
             flex-shrink: 0;
         }
-
-        .user-message .message-avatar { background: var(--primary); color: white; }
-        .assistant-message .message-avatar { background: var(--bg-light); }
-        .assistant-message.gemini .message-avatar { background: var(--gemini); color: white; }
-        .assistant-message.llama .message-avatar { background: var(--primary); color: white; }
-        .assistant-message.openai .message-avatar { background: var(--openai); color: white; }
-
-
-        .message-body {
-            flex: 1;
-            min-width: 0;
+        .streaming-indicator { 
+            animation: blink 1s step-start infinite; 
         }
-
-        .message-body h1, .message-body h2, .message-body h3 {
-            margin: 1em 0 0.5em 0;
-        }
-
-        .message-body p { margin-bottom: 1em; }
-        .message-body p:last-child { margin-bottom: 0; }
-        .message-body ul, .message-body ol { margin: 0 0 1em 24px; }
-        .message-body li { margin-bottom: 0.5em; }
-
-        .message-body code:not(pre code) {
-            background: #1a1a1a;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-size: 0.875em;
-        }
-
-        .message-body pre {
-            position: relative;
-            background: #1a1a1a;
-            border-radius: 6px;
-            padding: 16px;
-            padding-top: 40px;
-            overflow-x: auto;
-            margin: 1em 0;
-        }
-
-        .message-body blockquote {
-            border-left: 3px solid var(--border);
-            padding-left: 16px;
-            margin: 1em 0;
-            color: var(--text-dim);
-        }
-
-        /* Code Actions */
-        .code-actions {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .code-action-button {
-            padding: 4px 8px;
-            font-size: 12px;
-            background: var(--bg-light);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            cursor: pointer;
-            opacity: 0.8;
-        }
-
-        .code-action-button:hover { opacity: 1; }
-        .code-action-button.copied { background: var(--primary); border-color: var(--primary); }
-
-        /* Chat Input */
-        .chat-input-container {
-            border-top: 1px solid var(--border);
-            padding: 16px 0;
-        }
-
-        .chat-input-wrapper {
-            max-width: 768px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        .input-area {
-            background: var(--bg-light);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-        }
-
-        .input-area:focus-within { border-color: var(--primary); }
-
-        .staged-files {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .staged-file-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            background: #303030;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-
-        .remove-file-button {
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            padding: 0 2px;
-        }
-
-        .remove-file-button:hover { color: var(--danger); }
-
-        .input-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .chat-input {
-            flex: 1;
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 15px;
-            resize: none;
-            outline: none;
-            min-height: 24px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: inherit;
-            line-height: 1.5;
-        }
-
-        .input-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .file-upload-label {
-            cursor: pointer;
-            color: var(--text-dim);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-        }
-
-        .file-upload-label:hover { color: var(--text); background: #303030; }
-        .file-upload-label svg { width: 20px; height: 20px; }
-
-        .send-button {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .send-button:hover:not(:disabled) { background: #0d8f6f; }
-        .send-button.stop-button { background: var(--danger); border-color: var(--danger); }
-
-        /* Status & Misc */
-        .status-bar {
-            padding: 8px 24px;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-dim);
-            min-height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .status-bar.error { color: var(--danger); }
-        .status-bar.info { color: var(--primary); }
-
-        .token-counter {
-            font-size: 12px;
-            color: var(--text-dim);
-            text-align: center;
-            margin-top: 4px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-dim);
-        }
-
-        .empty-state h2 {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: var(--text);
-        }
-
-        .streaming-indicator {
-            animation: blink 1s step-start infinite;
-            opacity: 0.7;
-        }
-
         @keyframes blink { 50% { opacity: 0; } }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s;
+        
+        .code-actions { 
+            position: absolute; 
+            top: 8px; 
+            right: 8px; 
+            display: none;
         }
-
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-
-        .modal {
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 24px;
-            max-width: 480px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
+        pre:hover .code-actions { display: block; }
+        pre { position: relative; }
+        
+        .model-gemini.active { 
+            background-color: #4285f4 !important; 
+            border-color: #4285f4 !important; 
+            color: white !important;
         }
-
-        .modal-header {
+        .model-llama.active { 
+            background-color: #10a37f !important; 
+            border-color: #10a37f !important; 
+            color: white !important;
+        }
+        .model-openai.active { 
+            background-color: #41A58F !important; 
+            border-color: #41A58F !important; 
+            color: white !important;
+        }
+        
+        .avatar-gemini { background-color: #4285f4; }
+        .avatar-llama { background-color: #10a37f; }
+        .avatar-openai { background-color: #41A58F; }
+        
+        .staged-file { 
+            background-color: var(--bs-secondary-bg);
+            border: 1px solid var(--bs-border-color);
+        }
+        
+        .session-item {
+            cursor: pointer;
+            padding: 8px 12px;
+            margin-bottom: 2px;
+            border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-title { font-size: 18px; font-weight: 600; }
-
-        .modal-close {
-            background: none;
+            background: transparent;
             border: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 24px;
-            padding: 4px;
+            color: var(--bs-body-color);
+        }
+        .session-item:hover {
+            background-color: var(--bs-secondary-bg);
+        }
+        .session-item.active {
+            background-color: var(--bs-primary);
+            color: white;
+        }
+        .session-item .delete-btn {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .session-item:hover .delete-btn {
+            opacity: 1;
         }
 
-        .modal-close:hover { color: var(--text); }
-
-        .settings-group {
-            margin-bottom: 20px;
+        .chat-input-area {
+            border-top: 1px solid var(--bs-border-color);
+            background-color: var(--bs-body-bg);
         }
-
-        .settings-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .settings-group input, .settings-group select {
-            width: 100%;
-        }
-
-        .settings-group small {
-            display: block;
-            margin-top: 4px;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .api-key-warning {
-            font-size: 12px;
-            color: #f59e0b;
-            margin-top: 6px;
-        }
-
-        /* Mobile */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -260px;
-                height: 100%;
-                z-index: 100;
-                transition: left 0.3s;
-            }
-            .sidebar.open { left: 0; }
-            .mobile-menu-btn {
-                position: fixed;
-                top: 16px; left: 16px;
-                z-index: 101;
-                background: var(--bg);
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                padding: 8px;
-                display: flex;
-            }
-            .message-content, .chat-input-wrapper { padding: 0 16px; }
-        }
-
-        @media (min-width: 769px) {
-            .mobile-menu-btn { display: none; }
-        }
-
-        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Mobile Menu Button -->
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 12h18M3 6h18M3 18h18"></path>
-            </svg>
-        </button>
+    <div class="d-flex h-100">
+        <div class="sidebar d-none d-md-flex flex-column h-100">
+            <div class="p-3 flex-grow-1">
+                <button class="btn btn-primary w-100 mb-3" id="newChatBtn">
+                    <i class="bi bi-plus"></i> New chat
+                </button>
+                
+                <div class="mb-3" style="height: 300px; overflow-y: auto;" id="sessionsList">
+                    <!-- Sessions will be populated here -->
+                </div>
 
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <button class="new-chat-btn" id="newChatBtn">New chat</button>
-            </div>
-            
-            <div class="sessions-list" id="sessionsList">
-                <!-- Sessions will be populated here -->
-            </div>
+                <button class="btn btn-outline-secondary w-100 mb-3" id="saveSessionBtn">
+                    <i class="bi bi-save"></i> Save chat
+                </button>
 
-            <button class="save-session-btn" id="saveSessionBtn">
-                <span style="font-size: 18px; font-weight: 400;">💾</span>
-                Save chat
-            </button>
+                <!-- Model Selection -->
+                <div class="btn-group w-100 mb-2" role="group">
+                    <button class="btn btn-outline-secondary model-gemini" id="geminiBtn">Gemini</button>
+                    <button class="btn btn-outline-secondary model-llama" id="llamaBtn">Llama</button>
+                    <button class="btn btn-outline-secondary model-openai" id="openaiBtn">OpenAI</button>
+                </div>
 
-            <div class="sidebar-footer">
-                <div class="model-selector">
-                    <div class="model-type-toggle">
-                        <button class="model-type-btn gemini" id="geminiBtn">Gemini</button>
-                        <button class="model-type-btn llama" id="llamaBtn">Llama</button>
-                        <button class="model-type-btn openai" id="openaiBtn">OpenAI</button>
-                    </div>
-                    
-                    <!-- Gemini Config -->
-                    <div id="geminiConfig" style="display: none;">
-                        <input type="password" class="config-input" id="geminiApiKey" placeholder="Google AI Studio API Key">
-                        <select class="config-input" id="geminiModelSelect" disabled>
-                            <option value="">-- Enter API Key First --</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Llama Config -->
-                    <div id="llamaConfig" style="display: none;">
-                        <input type="url" class="config-input" id="llamaServerUrl" placeholder="Server URL (e.g., http://127.0.0.1:8080)" value="http://127.0.0.1:8080">
-                    </div>
-
-                    <!-- OpenAI Config -->
-                    <div id="openaiConfig" style="display: none;">
-                        <input type="password" class="config-input" id="openaiApiKey" placeholder="OpenAI API Key">
-                        <select class="config-input" id="openaiModelSelect" disabled>
-                            <option value="">-- Enter API Key First --</option>
-                        </select>
+                <!-- Gemini Config -->
+                <div id="geminiConfig" class="d-none">
+                    <input type="password" class="form-control form-control-sm mb-2" id="geminiApiKey" placeholder="Google AI Studio API Key">
+                    <select class="form-select form-select-sm mb-2" id="geminiModelSelect" disabled>
+                        <option>-- Enter API Key First --</option>
+                    </select>
+                    <div class="text-center">
+                        <small class="text-muted" id="tokenCounter">
+                            <span id="tokenCountValue">0</span> tokens
+                        </small>
                     </div>
                 </div>
 
-                <div class="sidebar-actions">
-                    <button id="settingsBtn">Settings</button>
-                    <button id="themeSwitcher">🌙</button>
-                    <button id="importExportBtn">📁</button>
+                <!-- Llama Config -->
+                <div id="llamaConfig" class="d-none">
+                    <input type="url" class="form-control form-control-sm mb-2" id="llamaServerUrl" placeholder="Server URL" value="http://127.0.0.1:8080">
+                </div>
+
+                <!-- OpenAI Config -->
+                <div id="openaiConfig" class="d-none">
+                    <input type="password" class="form-control form-control-sm mb-2" id="openaiApiKey" placeholder="OpenAI API Key">
+                    <select class="form-select form-select-sm mb-2" id="openaiModelSelect" disabled>
+                        <option>-- Enter API Key First --</option>
+                    </select>
                 </div>
             </div>
-        </aside>
+
+            <!-- Bottom Actions -->
+            <div class="p-3 border-top">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" id="themeSwitcher">🌙</button>
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#importExportModal">
+                        <i class="bi bi-folder"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <div class="flex-grow-1 d-flex flex-column h-100">
+            <!-- Mobile Menu Button -->
+            <button class="btn btn-outline-secondary d-md-none position-fixed top-0 start-0 m-3" style="z-index: 1050;" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                <i class="bi bi-list"></i>
+            </button>
+
             <!-- Chat Container -->
-            <div class="chat-container" id="chatContainer">
-                <div class="empty-state">
+            <div class="chat-container p-4" id="chatContainer">
+                <div class="text-center py-5">
                     <h2>Totum Chat</h2>
-                    <p>Chat with Gemini, Llama, or OpenAI models</p>
+                    <p class="text-muted">Chat with Gemini, Llama, or OpenAI models</p>
                 </div>
             </div>
 
             <!-- Chat Input -->
-            <div class="chat-input-container">
-                <div class="chat-input-wrapper">
-                    <div class="input-area">
-                        <div class="staged-files" id="stagedFilesArea" style="display: none;">
-                            <!-- Staged files will appear here -->
-                        </div>
-                        <div class="input-row">
-                            <textarea 
-                                class="chat-input" 
-                                id="chatInput" 
-                                placeholder="Message..."
-                                rows="1"
-                            ></textarea>
-                            <div class="input-actions">
-                                <label for="fileInput" class="file-upload-label" title="Attach files">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                                    </svg>
-                                </label>
-                                <input type="file" id="fileInput" multiple accept="text/*,image/*,application/pdf,audio/*,video/*,.md,.py,.js,.html,.css,.json,.xml,.csv,.log">
-                                <button class="send-button" id="sendButton">
-                                    <span>Send</span>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                    </svg>
-                                </button>
+            <div class="chat-input-area p-3">
+                <div class="container-fluid">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 col-xl-6">
+                            <div class="card">
+                                <div class="card-body p-3">
+                                    <div id="stagedFilesArea" class="d-none mb-2">
+                                        <!-- Staged files -->
+                                    </div>
+                                    <div class="input-group">
+                                        <textarea class="form-control" id="chatInput" placeholder="Message..." rows="1" style="resize: none;"></textarea>
+                                        <label class="btn btn-outline-secondary" for="fileInput">
+                                            <i class="bi bi-paperclip"></i>
+                                        </label>
+                                        <button class="btn btn-primary" id="sendButton" disabled>
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </div>
+                                    <input type="file" id="fileInput" class="d-none" multiple>
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <small class="text-muted" id="statusBar"></small>
                             </div>
                         </div>
                     </div>
-                    <div class="status-bar" id="statusBar"></div>
-                    <div class="token-counter" id="tokenCounter" style="display: none;">
-                        <span id="tokenCountValue">0</span> tokens (Gemini only)
-                    </div>
                 </div>
             </div>
-        </main>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar -->
+    <div class="offcanvas offcanvas-start" id="mobileSidebar">
+        <div class="offcanvas-header">
+            <h5>Totum Chat</h5>
+            <button class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <button class="btn btn-primary w-100 mb-3" onclick="document.getElementById('newChatBtn').click(); bootstrap.Offcanvas.getInstance(document.getElementById('mobileSidebar')).hide();">
+                <i class="bi bi-plus"></i> New chat
+            </button>
+            <div class="mb-3" style="height: 200px; overflow-y: auto;" id="sessionsListMobile">
+                <!-- Sessions mirror -->
+            </div>
+        </div>
     </div>
 
     <!-- Settings Modal -->
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Settings</h3>
-                <button class="modal-close" id="closeSettings">&times;</button>
-            </div>
-            
-            <div class="settings-group">
-                <label for="temperature">Temperature</label>
-                <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.7">
-                <small>Controls randomness. Higher values make output more random.</small>
-            </div>
-
-            <div class="settings-group">
-                <label for="maxTokens">Max Tokens</label>
-                <input type="number" id="maxTokens" min="1" step="1" value="2048">
-                <small>Maximum number of tokens to generate.</small>
-            </div>
-
-            <div class="settings-group">
-                <label for="topP">Top P</label>
-                <input type="number" id="topP" min="0" max="1" step="0.01" value="0.95">
-                <small>Nucleus sampling parameter.</small>
-            </div>
-
-            <div class="settings-group">
-                <label for="topK">Top K (Llama/Gemini)</label>
-                <input type="number" id="topK" min="1" step="1" value="40">
-                <small>Top-k sampling parameter. Not used by OpenAI Chat API.</small>
-            </div>
-
-            <div class="settings-group" id="modelStopSequences">
-                <label for="stopSequences">Stop Sequences</label>
-                <input type="text" id="stopSequences" value="USER:, \nUSER:, <|user|>">
-                <small>Comma-separated strings to stop generation.</small>
-            </div>
-
-            <div class="settings-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="rememberConfig">
-                    <label for="rememberConfig">Remember API Keys & Server URLs</label>
+    <div class="modal fade" id="settingsModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Settings</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="api-key-warning">
-                    ⚠️ Storing API keys in browser storage is insecure for shared devices.
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Temperature</label>
+                        <input type="number" class="form-control" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                        <small class="text-muted">Controls randomness</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Tokens</label>
+                        <input type="number" class="form-control" id="maxTokens" min="1" value="2048">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Top P</label>
+                        <input type="number" class="form-control" id="topP" min="0" max="1" step="0.01" value="0.95">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Top K</label>
+                        <input type="number" class="form-control" id="topK" min="1" value="40">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stop Sequences</label>
+                        <input type="text" class="form-control" id="stopSequences" value="USER:, \nUSER:, <|user|>">
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="rememberConfig">
+                        <label class="form-check-label">Remember API Keys</label>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Import/Export Modal -->
-    <div class="modal-overlay" id="importExportModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Import/Export Chats</h3>
-                <button class="modal-close" id="closeImportExport">&times;</button>
-            </div>
-            
-            <div class="settings-group">
-                <button class="send-button" style="width: 100%; margin-bottom: 12px;" id="exportAllBtn">
-                    Export All Chats
-                </button>
-                <button class="send-button" style="width: 100%;" id="importChatsBtn">
-                    Import Chats
-                </button>
-                <input type="file" id="importFileInput" accept=".json">
+    <div class="modal fade" id="importExportModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import/Export</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <button class="btn btn-primary w-100 mb-2" id="exportAllBtn">Export All Chats</button>
+                    <button class="btn btn-primary w-100" id="importChatsBtn">Import Chats</button>
+                    <input type="file" id="importFileInput" class="d-none" accept=".json">
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         'use strict';
 
-        // Constants
+        // Constants & State
         const SESSION_INDEX_KEY = 'unifiedChatIndex';
         const SESSION_DATA_PREFIX = 'unifiedChatSession_';
-        const MAX_TEXT_FILE_EMBED_SIZE = 200 * 1024; // For Llama text embedding
+        const MAX_TEXT_FILE_EMBED_SIZE = 200 * 1024;
         const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/";
         const OPENAI_API_BASE = "https://api.openai.com/v1/";
 
-
-        // State
         let chatHistory = [];
         let currentSessionId = null;
         let currentAbortController = null;
         let messageCounter = 0;
         let stagedFiles = [];
-        let currentModelType = 'gemini'; // 'gemini', 'llama', or 'openai'
+        let currentModelType = 'gemini';
         let geminiModelsLoaded = false;
         let openaiModelsLoaded = false;
 
-
         // DOM Elements
+        const $ = id => document.getElementById(id);
         const elements = {
-            // Sidebar
-            sidebar: document.getElementById('sidebar'),
-            mobileMenuBtn: document.getElementById('mobileMenuBtn'),
-            newChatBtn: document.getElementById('newChatBtn'),
-            sessionsList: document.getElementById('sessionsList'),
-            saveSessionBtn: document.getElementById('saveSessionBtn'),
-            
-            // Model Config
-            geminiBtn: document.getElementById('geminiBtn'),
-            llamaBtn: document.getElementById('llamaBtn'),
-            openaiBtn: document.getElementById('openaiBtn'),
-
-            geminiConfig: document.getElementById('geminiConfig'),
-            llamaConfig: document.getElementById('llamaConfig'),
-            openaiConfig: document.getElementById('openaiConfig'),
-            
-            geminiApiKey: document.getElementById('geminiApiKey'),
-            geminiModelSelect: document.getElementById('geminiModelSelect'),
-            
-            llamaServerUrl: document.getElementById('llamaServerUrl'),
-
-            openaiApiKey: document.getElementById('openaiApiKey'),
-            openaiModelSelect: document.getElementById('openaiModelSelect'),
-            
-            // Settings
-            settingsBtn: document.getElementById('settingsBtn'),
-            settingsModal: document.getElementById('settingsModal'),
-            closeSettings: document.getElementById('closeSettings'),
-            themeSwitcher: document.getElementById('themeSwitcher'),
-            temperature: document.getElementById('temperature'),
-            maxTokens: document.getElementById('maxTokens'),
-            topP: document.getElementById('topP'),
-            topK: document.getElementById('topK'),
-            stopSequences: document.getElementById('stopSequences'),
-            modelStopSequences: document.getElementById('modelStopSequences'), // Changed from llamaStopSequences
-            rememberConfig: document.getElementById('rememberConfig'),
-            
-            // Import/Export
-            importExportBtn: document.getElementById('importExportBtn'),
-            importExportModal: document.getElementById('importExportModal'),
-            closeImportExport: document.getElementById('closeImportExport'),
-            exportAllBtn: document.getElementById('exportAllBtn'),
-            importChatsBtn: document.getElementById('importChatsBtn'),
-            importFileInput: document.getElementById('importFileInput'),
-            
-            // Chat
-            chatContainer: document.getElementById('chatContainer'),
-            chatInput: document.getElementById('chatInput'),
-            sendButton: document.getElementById('sendButton'),
-            fileInput: document.getElementById('fileInput'),
-            stagedFilesArea: document.getElementById('stagedFilesArea'),
-            statusBar: document.getElementById('statusBar'),
-            tokenCounter: document.getElementById('tokenCounter'),
-            tokenCountValue: document.getElementById('tokenCountValue')
+            sidebar: document.querySelector('.sidebar'),
+            newChatBtn: $('newChatBtn'),
+            sessionsList: $('sessionsList'),
+            saveSessionBtn: $('saveSessionBtn'),
+            geminiBtn: $('geminiBtn'),
+            llamaBtn: $('llamaBtn'),
+            openaiBtn: $('openaiBtn'),
+            geminiConfig: $('geminiConfig'),
+            llamaConfig: $('llamaConfig'),
+            openaiConfig: $('openaiConfig'),
+            geminiApiKey: $('geminiApiKey'),
+            geminiModelSelect: $('geminiModelSelect'),
+            llamaServerUrl: $('llamaServerUrl'),
+            openaiApiKey: $('openaiApiKey'),
+            openaiModelSelect: $('openaiModelSelect'),
+            themeSwitcher: $('themeSwitcher'),
+            temperature: $('temperature'),
+            maxTokens: $('maxTokens'),
+            topP: $('topP'),
+            topK: $('topK'),
+            stopSequences: $('stopSequences'),
+            rememberConfig: $('rememberConfig'),
+            exportAllBtn: $('exportAllBtn'),
+            importChatsBtn: $('importChatsBtn'),
+            importFileInput: $('importFileInput'),
+            chatContainer: $('chatContainer'),
+            chatInput: $('chatInput'),
+            sendButton: $('sendButton'),
+            fileInput: $('fileInput'),
+            stagedFilesArea: $('stagedFilesArea'),
+            statusBar: $('statusBar'),
+            tokenCounter: $('tokenCounter'),
+            tokenCountValue: $('tokenCountValue')
         };
 
         // Initialize
@@ -771,100 +352,86 @@
             initializeTheme();
             configureMarked();
             populateSessions();
-            switchModel(currentModelType); // Applies loaded or default model
+            switchModel(currentModelType);
             updateSendButtonState();
         }
 
         function setupEventListeners() {
-            // Sidebar
-            elements.mobileMenuBtn.addEventListener('click', toggleMobileSidebar);
-            elements.newChatBtn.addEventListener('click', startNewSession);
-            elements.saveSessionBtn.addEventListener('click', handleSaveSession);
-            
             // Model Selection
             elements.geminiBtn.addEventListener('click', () => switchModel('gemini'));
             elements.llamaBtn.addEventListener('click', () => switchModel('llama'));
             elements.openaiBtn.addEventListener('click', () => switchModel('openai'));
             
-            // Gemini Config
-            elements.geminiApiKey.addEventListener('input', handleGeminiApiKeyInput);
-            elements.geminiModelSelect.addEventListener('change', updateSendButtonState);
+            // API Keys - with debouncing
+            elements.geminiApiKey.addEventListener('input', debounce(handleGeminiApiKeyInput, 500));
+            elements.openaiApiKey.addEventListener('input', debounce(handleOpenAIApiKeyInput, 500));
+            elements.llamaServerUrl.addEventListener('input', debounce(() => { saveConfig(); updateSendButtonState(); }, 500));
             
-            // Llama Config
-            elements.llamaServerUrl.addEventListener('input', handleLlamaServerInput);
-
-            // OpenAI Config
-            elements.openaiApiKey.addEventListener('input', handleOpenAIApiKeyInput);
-            elements.openaiModelSelect.addEventListener('change', updateSendButtonState);
-            
-            // Settings
-            elements.settingsBtn.addEventListener('click', () => elements.settingsModal.classList.add('active'));
-            elements.closeSettings.addEventListener('click', () => elements.settingsModal.classList.remove('active'));
-            elements.settingsModal.addEventListener('click', (e) => {
-                if (e.target === elements.settingsModal) elements.settingsModal.classList.remove('active');
-            });
-            elements.rememberConfig.addEventListener('change', handleRememberConfigChange);
-            
-            // Import/Export
-            elements.importExportBtn.addEventListener('click', () => elements.importExportModal.classList.add('active'));
-            elements.closeImportExport.addEventListener('click', () => elements.importExportModal.classList.remove('active'));
-            elements.exportAllBtn.addEventListener('click', handleExportAll);
-            elements.importChatsBtn.addEventListener('click', () => elements.importFileInput.click());
-            elements.importFileInput.addEventListener('change', handleImportChats);
-            
-            // Theme
-            elements.themeSwitcher.addEventListener('click', toggleTheme);
-            
-            // Chat Input
+            // Chat
+            elements.newChatBtn.addEventListener('click', startNewSession);
+            elements.saveSessionBtn.addEventListener('click', handleSaveSession);
             elements.sendButton.addEventListener('click', handleSendPrompt);
+            
             elements.chatInput.addEventListener('input', () => {
                 updateSendButtonState();
                 autoResizeTextarea(elements.chatInput);
             });
-            elements.chatInput.addEventListener('keydown', (event) => {
-                if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-                    event.preventDefault();
-                    if (!elements.sendButton.disabled && elements.sendButton.textContent.includes('Send')) {
+            
+            elements.chatInput.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!elements.sendButton.disabled && !currentAbortController) {
                         handleSendPrompt();
                     }
                 }
             });
             
-            // File Input
+            // Files
             elements.fileInput.addEventListener('change', handleFileSelection);
             elements.stagedFilesArea.addEventListener('click', handleRemoveStagedFile);
             
-            // Chat Container - Code buttons
-            elements.chatContainer.addEventListener('click', function(event) {
-                if (event.target.classList.contains('copy-code-button')) {
-                    handleCopyCodeClick(event.target);
-                } else if (event.target.classList.contains('download-code-button')) {
-                    handleDownloadCodeClick(event.target);
+            // Theme
+            elements.themeSwitcher.addEventListener('click', toggleTheme);
+            
+            // Import/Export
+            elements.exportAllBtn.addEventListener('click', handleExportAll);
+            elements.importChatsBtn.addEventListener('click', () => elements.importFileInput.click());
+            elements.importFileInput.addEventListener('change', handleImportChats);
+            
+            // Settings
+            elements.rememberConfig.addEventListener('change', handleRememberConfigChange);
+            
+            // Chat interactions
+            elements.chatContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('copy-code-button')) {
+                    handleCopyCodeClick(e.target);
+                } else if (e.target.classList.contains('download-code-button')) {
+                    handleDownloadCodeClick(e.target);
                 }
             });
             
-            // Sessions List
-            elements.sessionsList.addEventListener('click', function(event) {
-                const sessionItem = event.target.closest('.session-item');
-                const deleteBtn = event.target.closest('.delete-btn');
+            // Sessions
+            elements.sessionsList.addEventListener('click', (e) => {
+                const sessionItem = e.target.closest('.session-item');
+                const deleteBtn = e.target.closest('.delete-btn');
                 
                 if (deleteBtn && sessionItem) {
-                    event.stopPropagation();
+                    e.stopPropagation();
                     handleDeleteSession(sessionItem.dataset.sessionId);
                 } else if (sessionItem) {
                     handleLoadSession(sessionItem.dataset.sessionId);
-                    closeMobileSidebar();
+                    const offcanvas = bootstrap.Offcanvas.getInstance($('mobileSidebar'));
+                    if (offcanvas) offcanvas.hide();
                 }
             });
         }
 
         function configureMarked() {
             marked.setOptions({
-                highlight: function(code, lang) {
+                highlight: (code, lang) => {
                     const language = hljs.getLanguage(lang) ? lang : 'plaintext';
                     try {
-                        const result = hljs.highlight(code, { language, ignoreIllegals: true });
-                        return result.value;
+                        return hljs.highlight(code, { language, ignoreIllegals: true }).value;
                     } catch (e) {
                         console.warn("Highlight.js error:", e);
                         return escapeHtml(code);
@@ -872,7 +439,7 @@
                 },
                 gfm: true,
                 breaks: true,
-                langPrefix: 'hljs language-',
+                langPrefix: 'hljs language-'
             });
         }
 
@@ -880,36 +447,26 @@
         function switchModel(modelType) {
             currentModelType = modelType;
             
-            elements.geminiBtn.classList.remove('active');
-            elements.llamaBtn.classList.remove('active');
-            elements.openaiBtn.classList.remove('active');
-
-            elements.geminiConfig.style.display = 'none';
-            elements.llamaConfig.style.display = 'none';
-            elements.openaiConfig.style.display = 'none';
-            
-            elements.tokenCounter.style.display = 'none'; // Default to hide
-            elements.modelStopSequences.style.display = 'none'; // Default to hide
-
+            // Reset button states
+            [elements.geminiBtn, elements.llamaBtn, elements.openaiBtn].forEach(btn => {
+                btn.classList.remove('active');
+            });
+            [elements.geminiConfig, elements.llamaConfig, elements.openaiConfig].forEach(config => {
+                config.classList.add('d-none');
+            });
 
             if (modelType === 'gemini') {
                 elements.geminiBtn.classList.add('active');
-                elements.geminiConfig.style.display = 'block';
-                elements.tokenCounter.style.display = 'block'; // Gemini has token counting
-                
+                elements.geminiConfig.classList.remove('d-none');
                 if (elements.geminiApiKey.value.trim() && !geminiModelsLoaded) {
                     fetchGeminiModels();
                 }
             } else if (modelType === 'llama') {
                 elements.llamaBtn.classList.add('active');
-                elements.llamaConfig.style.display = 'block';
-                elements.modelStopSequences.style.display = 'block';
+                elements.llamaConfig.classList.remove('d-none');
             } else if (modelType === 'openai') {
                 elements.openaiBtn.classList.add('active');
-                elements.openaiConfig.style.display = 'block';
-                elements.modelStopSequences.style.display = 'block';
-                // Token counter not shown for OpenAI for now.
-                
+                elements.openaiConfig.classList.remove('d-none');
                 if (elements.openaiApiKey.value.trim() && !openaiModelsLoaded) {
                     fetchOpenAIModels();
                 }
@@ -919,105 +476,33 @@
             saveConfig();
         }
 
-        // Gemini API Functions (existing)
-        let geminiApiKeyDebounceTimer;
-        function handleGeminiApiKeyInput() {
-            clearTimeout(geminiApiKeyDebounceTimer);
-            geminiApiKeyDebounceTimer = setTimeout(() => {
-                if (elements.geminiApiKey.value.trim()) {
-                    fetchGeminiModels();
-                } else {
-                    updateGeminiModelDropdown([], "-- Enter API Key First --");
-                    geminiModelsLoaded = false;
-                }
-                saveConfig(); 
-            }, 500);
-        }
-
+        // API Functions
         async function fetchGeminiModels() {
             const apiKey = elements.geminiApiKey.value.trim();
             if (!apiKey) return;
             
             geminiModelsLoaded = false;
-            updateGeminiModelDropdown([], "Loading...");
-            elements.geminiModelSelect.disabled = true;
+            updateModelDropdown(elements.geminiModelSelect, [], "Loading...");
             
             try {
                 const response = await fetch(`${GEMINI_API_BASE}models?key=${apiKey}`);
                 if (!response.ok) throw new Error(`Failed to list models: ${response.status}`);
                 
                 const data = await response.json();
-                const compatibleModels = (data.models || [])
-                    .filter(model => model.name.startsWith('models/') && 
-                            model.supportedGenerationMethods?.includes('generateContent'))
+                const models = (data.models || [])
+                    .filter(m => m.name.startsWith('models/') && m.supportedGenerationMethods?.includes('generateContent'))
                     .sort((a, b) => (a.displayName || a.name).localeCompare(b.displayName || b.name));
                 
-                if (compatibleModels.length > 0) {
-                    updateGeminiModelDropdown(compatibleModels);
-                    geminiModelsLoaded = true;
-                } else {
-                    updateGeminiModelDropdown([], "No compatible models found.");
-                }
+                updateModelDropdown(elements.geminiModelSelect, models.map(m => ({
+                    value: m.name,
+                    text: (m.displayName || m.name.split('/').pop()) + (m.name.includes('gemini-1.5-pro') ? ' (Multimodal)' : '')
+                })));
+                geminiModelsLoaded = true;
             } catch (error) {
                 console.error("Fetch Gemini Models Error:", error);
                 showStatus(`Error: ${error.message}`, true);
-                updateGeminiModelDropdown([], "Error loading models");
+                updateModelDropdown(elements.geminiModelSelect, [], "Error loading models");
             }
-        }
-
-        function updateGeminiModelDropdown(models, placeholderText = "-- Select a Model --") {
-            const previousValue = elements.geminiModelSelect.value;
-            elements.geminiModelSelect.innerHTML = '';
-            
-            const placeholder = document.createElement('option');
-            placeholder.value = "";
-            placeholder.textContent = placeholderText;
-            placeholder.disabled = true;
-            placeholder.selected = true;
-            elements.geminiModelSelect.appendChild(placeholder);
-            
-            models.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.name;
-                let displayName = model.displayName || model.name.split('/').pop();
-                if (model.name.includes('gemini-1.5-pro')) displayName += ' (Multimodal)';
-                option.textContent = displayName;
-                elements.geminiModelSelect.appendChild(option);
-                
-                if (model.name === previousValue || 
-                    (!previousValue && model.name.includes('gemini-1.5-pro-latest'))) { // Prefer latest pro
-                    option.selected = true;
-                    placeholder.selected = false;
-                }
-            });
-            
-            elements.geminiModelSelect.disabled = models.length === 0;
-            updateSendButtonState();
-        }
-
-        // Llama Server Functions (existing)
-        let llamaServerDebounceTimer;
-        function handleLlamaServerInput() {
-            clearTimeout(llamaServerDebounceTimer);
-            llamaServerDebounceTimer = setTimeout(() => {
-                saveConfig();
-                updateSendButtonState();
-            }, 500);
-        }
-
-        // OpenAI API Functions (new)
-        let openaiApiKeyDebounceTimer;
-        function handleOpenAIApiKeyInput() {
-            clearTimeout(openaiApiKeyDebounceTimer);
-            openaiApiKeyDebounceTimer = setTimeout(() => {
-                if (elements.openaiApiKey.value.trim()) {
-                    fetchOpenAIModels();
-                } else {
-                    updateOpenAIModelDropdown([], "-- Enter API Key First --");
-                    openaiModelsLoaded = false;
-                }
-                saveConfig();
-            }, 500);
         }
 
         async function fetchOpenAIModels() {
@@ -1025,8 +510,7 @@
             if (!apiKey) return;
 
             openaiModelsLoaded = false;
-            updateOpenAIModelDropdown([], "Loading...");
-            elements.openaiModelSelect.disabled = true;
+            updateModelDropdown(elements.openaiModelSelect, [], "Loading...");
 
             try {
                 const response = await fetch(`${OPENAI_API_BASE}models`, {
@@ -1035,165 +519,111 @@
                 if (!response.ok) throw new Error(`Failed to list models: ${response.status}`);
 
                 const data = await response.json();
-                // Filter for chat models (typically containing "gpt") and sort them
-                // Prioritize newer models like gpt-4o, gpt-4-turbo
-                const compatibleModels = (data.data || [])
-                    .filter(model => model.id.includes('gpt-')) // Basic filter for GPT models
+                const models = (data.data || [])
+                    .filter(m => m.id.includes('gpt-'))
                     .sort((a, b) => {
-                        // Simple sort: gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, then others
                         const order = ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
                         const aOrder = order.findIndex(p => a.id.startsWith(p));
                         const bOrder = order.findIndex(p => b.id.startsWith(p));
                         if (aOrder !== -1 && bOrder !== -1) return aOrder - bOrder;
                         if (aOrder !== -1) return -1;
                         if (bOrder !== -1) return 1;
-                        return b.id.localeCompare(a.id); // Fallback to reverse alphabetical
+                        return b.id.localeCompare(a.id);
                     });
 
-                if (compatibleModels.length > 0) {
-                    updateOpenAIModelDropdown(compatibleModels);
-                    openaiModelsLoaded = true;
-                } else {
-                    updateOpenAIModelDropdown([], "No compatible models found.");
-                }
+                updateModelDropdown(elements.openaiModelSelect, models.map(m => ({ 
+                    value: m.id, 
+                    text: m.id 
+                })));
+                openaiModelsLoaded = true;
             } catch (error) {
                 console.error("Fetch OpenAI Models Error:", error);
                 showStatus(`OpenAI Error: ${error.message}`, true);
-                updateOpenAIModelDropdown([], "Error loading models");
+                updateModelDropdown(elements.openaiModelSelect, [], "Error loading models");
             }
         }
 
-        function updateOpenAIModelDropdown(models, placeholderText = "-- Select a Model --") {
-            const previousValue = elements.openaiModelSelect.value;
-            elements.openaiModelSelect.innerHTML = '';
-
-            const placeholder = document.createElement('option');
-            placeholder.value = "";
-            placeholder.textContent = placeholderText;
-            placeholder.disabled = true;
-            placeholder.selected = true;
-            elements.openaiModelSelect.appendChild(placeholder);
-
+        function updateModelDropdown(select, models, placeholder = "-- Select a Model --") {
+            const previousValue = select.value;
+            select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+            
             models.forEach(model => {
                 const option = document.createElement('option');
-                option.value = model.id;
-                option.textContent = model.id;
-                elements.openaiModelSelect.appendChild(option);
-
-                if (model.id === previousValue || 
-                    (!previousValue && model.id.startsWith('gpt-4o'))) { // Default to gpt-4o if available
+                option.value = model.value;
+                option.textContent = model.text;
+                if (model.value === previousValue || (!previousValue && (
+                    model.value.includes('gemini-1.5-pro-latest') || model.value.startsWith('gpt-4o')
+                ))) {
                     option.selected = true;
-                    placeholder.selected = false;
                 }
+                select.appendChild(option);
             });
-
-            elements.openaiModelSelect.disabled = models.length === 0;
+            
+            select.disabled = models.length === 0;
             updateSendButtonState();
         }
-
 
         // Send Message
         async function handleSendPrompt() {
             if (currentAbortController) {
-                handleStopGeneration();
+                currentAbortController.abort();
+                showStatus("Generation stopped", false);
+                resetSendButton();
                 return;
             }
 
             const promptText = elements.chatInput.value.trim();
-            
-            if (!promptText && stagedFiles.length === 0) {
+            if (!promptText && !stagedFiles.length) {
                 showStatus("Message cannot be empty", true);
                 return;
             }
 
             currentAbortController = new AbortController();
-            elements.sendButton.innerHTML = '<span>Stop</span>';
-            elements.sendButton.classList.add('stop-button');
+            elements.sendButton.innerHTML = '<i class="bi bi-stop-fill"></i>';
             elements.chatInput.disabled = true;
 
-            let userContentForHistory = promptText; // This is what's stored for display in history
+            let userContentForHistory = promptText;
             let fileInfoForHistory = null;
             
             if (stagedFiles.length > 0) {
                 fileInfoForHistory = stagedFiles.map(f => ({
                     name: f.name,
                     type: f.type,
-                    // Store the content (DataURL or text) with the message for OpenAI/Gemini to use
-                    // Llama will re-process this for embedding its text files
                     data: f.content 
                 }));
             }
-            
-            const userMessageId = `msg-${messageCounter++}`;
+
             const userMessage = {
-                id: userMessageId,
+                id: `msg-${messageCounter++}`,
                 role: 'user',
-                content: userContentForHistory, // Text part of the user's message
-                fileInfo: fileInfoForHistory,  // Attached files information
+                content: userContentForHistory,
+                fileInfo: fileInfoForHistory,
                 timestamp: new Date(),
                 model: currentModelType,
-                displayContent: promptText // Explicitly for display if content gets modified
+                displayContent: promptText
             };
-            
-            chatHistory.push(userMessage);
-            renderChatHistory();
-            scrollToBottom();
-            
-            elements.chatInput.value = '';
-            autoResizeTextarea(elements.chatInput);
-            clearStagedFiles();
-            
-            const assistantMessageId = `msg-${messageCounter++}`;
+
             const assistantMessage = {
-                id: assistantMessageId,
+                id: `msg-${messageCounter++}`,
                 role: 'assistant',
                 content: '',
                 timestamp: new Date(),
                 model: currentModelType
             };
-            chatHistory.push(assistantMessage);
-            renderChatHistory(); // Render the placeholder for assistant
-            
+
+            chatHistory.push(userMessage, assistantMessage);
+            renderChatHistory();
+            scrollToBottom();
+
+            elements.chatInput.value = '';
+            autoResizeTextarea(elements.chatInput);
+            clearStagedFiles();
+
             try {
                 if (currentModelType === 'gemini') {
                     await sendToGemini(assistantMessage);
                 } else if (currentModelType === 'llama') {
-                    // Llama needs special handling for its prompt string with embedded files
-                    let llamaUserContent = promptText;
-                    if (stagedFiles.length > 0) {
-                        let fileInfoForPrompt = "Attached Files:\n";
-                        stagedFiles.forEach(fileData => {
-                            fileInfoForPrompt += `[File: ${fileData.name} (${fileData.type})]\n`;
-                            // Llama expects plain text for text files
-                            if (fileData.type.startsWith('text/') && typeof fileData.content === 'string') {
-                                if (fileData.content.startsWith('data:')) { // If it's a DataURL
-                                    try {
-                                        const base64Decoded = atob(fileData.content.split(',')[1]);
-                                        const textContent = decodeURIComponent(escape(base64Decoded));
-                                        if (textContent.length < MAX_TEXT_FILE_EMBED_SIZE) {
-                                            fileInfoForPrompt += `Content:\n---\n${textContent}\n---\n`;
-                                        } else {
-                                            fileInfoForPrompt += `Content: [File too large to embed: ${textContent.length} bytes]\n`;
-                                        }
-                                    } catch (e) {
-                                        console.error("Error decoding DataURL for Llama text file:", e);
-                                        fileInfoForPrompt += `Content: [Error decoding file for embedding]\n`;
-                                    }
-                                } else { // Assumed to be plain text already
-                                     if (fileData.content.length < MAX_TEXT_FILE_EMBED_SIZE) {
-                                        fileInfoForPrompt += `Content:\n---\n${fileData.content}\n---\n`;
-                                    } else {
-                                        fileInfoForPrompt += `Content: [File too large to embed: ${fileData.content.length} bytes]\n`;
-                                    }
-                                }
-                            }
-                        });
-                        fileInfoForPrompt += "\nUser Message:\n";
-                        llamaUserContent = fileInfoForPrompt + promptText;
-                    }
-                    // Modify the user message *content* specifically for Llama's API call format
-                    // The chatHistory userMessage.content remains the original promptText for consistency
-                    await sendToLlama(assistantMessage, llamaUserContent); 
+                    await sendToLlama(assistantMessage, prepareUserContentForLlama(promptText));
                 } else if (currentModelType === 'openai') {
                     await sendToOpenAI(assistantMessage);
                 }
@@ -1201,31 +631,60 @@
                 if (error.name !== 'AbortError') {
                     console.error("Send error:", error);
                     showStatus(`Error: ${error.message}`, true);
-                    const index = chatHistory.findIndex(m => m.id === assistantMessageId);
-                    if (index > -1 && chatHistory[index].content === '') {
+                    const index = chatHistory.findIndex(m => m.id === assistantMessage.id);
+                    if (index > -1 && assistantMessage.content === '') {
                         chatHistory.splice(index, 1);
                         renderChatHistory();
                     }
                 }
             } finally {
                 resetSendButton();
-                if (currentModelType === 'gemini') updateTokenCount(); // Only for Gemini
+                if (currentModelType === 'gemini') updateTokenCount();
             }
         }
 
+        function prepareUserContentForLlama(promptText) {
+            if (!stagedFiles.length) return promptText;
+            
+            let content = "Attached Files:\n";
+            stagedFiles.forEach(file => {
+                content += `[File: ${file.name} (${file.type})]\n`;
+                if (file.type.startsWith('text/') && typeof file.content === 'string') {
+                    let textContent = file.content;
+                    if (file.content.startsWith('data:')) {
+                        try {
+                            const base64Decoded = atob(file.content.split(',')[1]);
+                            textContent = decodeURIComponent(escape(base64Decoded));
+                        } catch (e) {
+                            console.error("Error decoding DataURL for Llama text file:", e);
+                            content += `Content: [Error decoding file for embedding]\n`;
+                            return;
+                        }
+                    }
+                    if (textContent.length < MAX_TEXT_FILE_EMBED_SIZE) {
+                        content += `Content:\n---\n${textContent}\n---\n`;
+                    } else {
+                        content += `Content: [File too large: ${textContent.length} bytes]\n`;
+                    }
+                }
+            });
+            return content + "\nUser Message:\n" + promptText;
+        }
+
+        // API Send Functions
         async function sendToGemini(assistantMessage) {
             const apiKey = elements.geminiApiKey.value.trim();
             const model = elements.geminiModelSelect.value;
             
             showStatus("Generating response (Gemini)...", false);
             
-            const contentsForApi = chatHistory.slice(0, -1).map(msg => { // Exclude the current empty assistant message
+            const contentsForApi = chatHistory.slice(0, -1).map(msg => {
                 const role = msg.role === 'user' ? 'user' : 'model';
                 const parts = [{ text: msg.displayContent || msg.content }];
                 
                 if (msg.role === 'user' && msg.fileInfo && Array.isArray(msg.fileInfo)) {
                     msg.fileInfo.forEach(file => {
-                        if (file.data && file.data.startsWith('data:')) { // Expects DataURL
+                        if (file.data && file.data.startsWith('data:')) {
                             const [header, base64Data] = file.data.split(',');
                             const mimeType = header.match(/:(.*?);/)?.[1] || file.type;
                             if (base64Data && mimeType) {
@@ -1265,57 +724,23 @@
                 throw new Error(`Gemini API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
             }
             
-            const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-            let buffer = '';
-            
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                
-                buffer += value;
-                let lines = buffer.split('\n');
-                buffer = lines.pop(); // Keep partial line for next chunk
-                
-                for (const line of lines) {
-                    if (line.startsWith('data:')) {
-                        const jsonStr = line.substring(5).trim();
-                        if (jsonStr) {
-                            try {
-                                const chunkData = JSON.parse(jsonStr);
-                                if (chunkData.candidates && chunkData.candidates.length > 0) {
-                                    const textPart = chunkData.candidates[0].content?.parts?.[0]?.text;
-                                    if (textPart) {
-                                        assistantMessage.content += textPart;
-                                        updateMessageBubble(assistantMessage.id, assistantMessage.content, true);
-                                    }
-                                }
-                            } catch (e) {
-                                console.error("Error parsing Gemini stream chunk:", e, jsonStr);
-                            }
-                        }
-                    }
-                }
-            }
-            
-            updateMessageBubble(assistantMessage.id, assistantMessage.content, false); // Final update
-            showStatus("Response complete", false);
+            await processStreamResponse(response, assistantMessage, 'gemini');
         }
 
         async function sendToLlama(assistantMessage, userContentForLlama) {
             const serverUrl = elements.llamaServerUrl.value.trim();
             showStatus("Connecting to Llama server...", false);
             
-            // Format history for Llama, using the specially prepared userContentForLlama for the last user message
-            const historyForLlama = chatHistory.slice(0, -2); // All messages except current user and empty assistant
+            const historyForLlama = chatHistory.slice(0, -2);
             let prompt = "";
             historyForLlama.forEach(message => {
                 if (message.role === 'user') {
-                    prompt += `USER: ${message.displayContent || message.content}\n`; // Use displayContent for past user messages
+                    prompt += `USER: ${message.displayContent || message.content}\n`;
                 } else if (message.role === 'assistant') {
                     prompt += `ASSISTANT: ${message.content}\n`;
                 }
             });
-            prompt += `USER: ${userContentForLlama}\nASSISTANT:`; // Add current user message (potentially with embedded files)
+            prompt += `USER: ${userContentForLlama}\nASSISTANT:`;
             
             const apiUrl = `${serverUrl}/completion`;
             const requestBody = {
@@ -1339,45 +764,7 @@
                 throw new Error(`Llama Server Error: ${response.status} ${response.statusText}`);
             }
             
-            showStatus("Receiving Llama response...", false);
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                
-                buffer += decoder.decode(value, { stream: true });
-                let lines = buffer.split('\n\n'); // Llama server sends events separated by double newlines
-                buffer = lines.pop(); 
-                
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonData = line.substring(6).trim();
-                        if (jsonData) {
-                            try {
-                                const data = JSON.parse(jsonData);
-                                if (typeof data.content === 'string') {
-                                    assistantMessage.content += data.content;
-                                    updateMessageBubble(assistantMessage.id, assistantMessage.content, true);
-                                }
-                                if (data.stop) { // Server might indicate stop
-                                    console.log("Llama generation stopped by server.");
-                                    updateMessageBubble(assistantMessage.id, assistantMessage.content, false);
-                                    showStatus("Response complete (Llama)", false);
-                                    return; // Exit loop
-                                }
-                            } catch (e) {
-                                console.error("Error parsing Llama stream JSON:", e, jsonData);
-                            }
-                        }
-                    }
-                }
-            }
-            
-            updateMessageBubble(assistantMessage.id, assistantMessage.content, false); // Final update
-            showStatus("Response complete (Llama)", false);
+            await processStreamResponse(response, assistantMessage, 'llama');
         }
 
         async function sendToOpenAI(assistantMessage) {
@@ -1392,22 +779,16 @@
                     const contentParts = [{ type: "text", text: msg.displayContent || msg.content }];
                     if (msg.fileInfo && Array.isArray(msg.fileInfo)) {
                         msg.fileInfo.forEach(file => {
-                            // OpenAI expects data URLs for images (e.g., "data:image/jpeg;base64,...")
                             if (file.data && file.data.startsWith('data:image/')) {
                                 contentParts.push({
                                     type: "image_url",
                                     image_url: { url: file.data }
                                 });
-                            } else if (file.data && file.data.startsWith('data:')) {
-                                // For other file types, if they were read as DataURL, we could try to send as text
-                                // but OpenAI vision models are primarily for images.
-                                // For now, only include images.
-                                console.warn("OpenAI: Non-image file provided, skipping:", file.name, file.type);
                             }
                         });
                     }
                     contentForApi = contentParts;
-                } else { // assistant
+                } else {
                     contentForApi = msg.content;
                 }
                 return { role: msg.role === 'user' ? 'user' : 'assistant', content: contentForApi };
@@ -1423,7 +804,6 @@
                 stop: elements.stopSequences.value.split(',').map(s => s.trim()).filter(s => s),
                 stream: true
             };
-            // top_k is not standard for OpenAI chat completions, so it's omitted.
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -1436,60 +816,80 @@
             });
 
             if (!response.ok) {
-                 const errorData = await response.json().catch(() => ({})); // Try to parse error
-                 throw new Error(`OpenAI API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`OpenAI API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
             }
 
+            await processStreamResponse(response, assistantMessage, 'openai');
+        }
+
+        // Unified stream processing
+        async function processStreamResponse(response, assistantMessage, provider) {
             const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
             let buffer = '';
-
+            
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
-
+                
                 buffer += value;
-                let lines = buffer.split('\n');
-                buffer = lines.pop(); // Keep partial line for next chunk
-
+                const lines = buffer.split(provider === 'llama' ? '\n\n' : '\n');
+                buffer = lines.pop();
+                
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonStr = line.substring(6).trim();
+                    if (provider === 'llama' && line.startsWith('data: ')) {
+                        const jsonData = line.substring(6).trim();
+                        if (jsonData) {
+                            try {
+                                const data = JSON.parse(jsonData);
+                                if (typeof data.content === 'string') {
+                                    assistantMessage.content += data.content;
+                                    updateMessageBubble(assistantMessage.id, assistantMessage.content, true);
+                                }
+                                if (data.stop) {
+                                    updateMessageBubble(assistantMessage.id, assistantMessage.content, false);
+                                    showStatus("Response complete (Llama)", false);
+                                    return;
+                                }
+                            } catch (e) {
+                                console.error("Error parsing Llama stream JSON:", e, jsonData);
+                            }
+                        }
+                    } else if (provider !== 'llama' && line.startsWith('data:')) {
+                        const jsonStr = line.substring(5).trim();
                         if (jsonStr === '[DONE]') {
                             updateMessageBubble(assistantMessage.id, assistantMessage.content, false);
-                            showStatus("Response complete (OpenAI)", false);
+                            showStatus("Response complete", false);
                             return;
                         }
                         if (jsonStr) {
                             try {
                                 const chunkData = JSON.parse(jsonStr);
-                                const delta = chunkData.choices?.[0]?.delta;
-                                if (delta?.content) {
-                                    assistantMessage.content += delta.content;
+                                let textPart = '';
+                                if (provider === 'gemini') {
+                                    textPart = chunkData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                                } else if (provider === 'openai') {
+                                    textPart = chunkData.choices?.[0]?.delta?.content || '';
+                                }
+                                if (textPart) {
+                                    assistantMessage.content += textPart;
                                     updateMessageBubble(assistantMessage.id, assistantMessage.content, true);
                                 }
                             } catch (e) {
-                                console.error("Error parsing OpenAI stream chunk:", e, jsonStr);
+                                console.error(`Error parsing ${provider} stream chunk:`, e, jsonStr);
                             }
                         }
                     }
                 }
             }
-            updateMessageBubble(assistantMessage.id, assistantMessage.content, false); // Final update if loop finishes without [DONE]
-            showStatus("Response complete (OpenAI)", false);
-        }
-
-        function handleStopGeneration() {
-            if (currentAbortController) {
-                currentAbortController.abort();
-                showStatus("Generation stopped", false);
-                // resetSendButton will be called by the finally block of handleSendPrompt
-            }
+            
+            updateMessageBubble(assistantMessage.id, assistantMessage.content, false);
+            showStatus("Response complete", false);
         }
 
         function resetSendButton() {
             currentAbortController = null;
-            elements.sendButton.innerHTML = '<span>Send</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
-            elements.sendButton.classList.remove('stop-button');
+            elements.sendButton.innerHTML = '<i class="bi bi-send"></i>';
             elements.chatInput.disabled = false;
             updateSendButtonState();
             elements.chatInput.focus();
@@ -1513,7 +913,7 @@
                 const fileData = {
                     name: file.name,
                     type: file.type || 'application/octet-stream',
-                    content: null, // Will be DataURL or text
+                    content: null,
                     error: null
                 };
                 stagedFiles.push(fileData);
@@ -1537,41 +937,35 @@
                     }
                 };
                 
-                // For Llama, text files are needed as plain text for embedding.
-                // For Gemini and OpenAI, DataURLs are generally preferred for their APIs.
                 if (currentModelType === 'llama' && file.type.startsWith('text/')) {
                     reader.readAsText(file);
                 } else {
-                    // For Gemini, OpenAI, or Llama non-text files (or Llama text if not read as text above)
                     reader.readAsDataURL(file);
                 }
             });
             
-            renderStagedFiles(); // Show progress immediately
-            event.target.value = null; // Clear file input
+            renderStagedFiles();
+            event.target.value = null;
         }
 
         function renderStagedFiles() {
-            elements.stagedFilesArea.innerHTML = '';
-            if (stagedFiles.length === 0) {
-                elements.stagedFilesArea.style.display = 'none';
+            if (!stagedFiles.length) {
+                elements.stagedFilesArea.classList.add('d-none');
+                elements.stagedFilesArea.innerHTML = '';
                 return;
             }
             
-            elements.stagedFilesArea.style.display = 'flex';
-            stagedFiles.forEach((file, index) => {
-                const item = document.createElement('div');
-                item.className = 'staged-file-item';
-                item.innerHTML = `
-                    <span>${escapeHtml(file.name)}</span>
-                    <button class="remove-file-button" data-index="${index}">&times;</button>
-                `;
-                elements.stagedFilesArea.appendChild(item);
-            });
+            elements.stagedFilesArea.classList.remove('d-none');
+            elements.stagedFilesArea.innerHTML = stagedFiles.map((file, index) => `
+                <span class="badge staged-file me-1 mb-1 d-inline-flex align-items-center">
+                    ${escapeHtml(file.name)}
+                    <button class="btn-close btn-close-white btn-sm ms-1" data-index="${index}" style="font-size: 0.7em;"></button>
+                </span>
+            `).join('');
         }
 
         function handleRemoveStagedFile(event) {
-            if (event.target.classList.contains('remove-file-button')) {
+            if (event.target.classList.contains('btn-close')) {
                 const index = parseInt(event.target.dataset.index, 10);
                 stagedFiles.splice(index, 1);
                 renderStagedFiles();
@@ -1589,9 +983,9 @@
         function renderChatHistory() {
             if (chatHistory.length === 0) {
                 elements.chatContainer.innerHTML = `
-                    <div class="empty-state">
-                        <h2>Unified AI Chat</h2>
-                        <p>Chat with Gemini, Llama, or OpenAI models</p>
+                    <div class="text-center py-5">
+                        <h2>Totum Chat</h2>
+                        <p class="text-muted">Chat with Gemini, Llama, or OpenAI models</p>
                     </div>
                 `;
                 return;
@@ -1608,57 +1002,39 @@
 
         function createMessageElement(message) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${message.role}-message`;
-            if (message.role === 'assistant') {
-                messageDiv.className += ` ${message.model}`; // gemini, llama, openai
-            }
+            messageDiv.className = 'd-flex mb-4';
             messageDiv.dataset.messageId = message.id;
             
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
+            const isUser = message.role === 'user';
+            const avatarClass = isUser ? 'bg-primary' : `avatar-${message.model}`;
+            const avatarText = isUser ? 'U' : { gemini: 'G', llama: 'L', openai: 'O' }[message.model] || 'A';
             
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'message-avatar';
-            let avatarChar = 'U';
-            if (message.role === 'assistant') {
-                if (message.model === 'gemini') avatarChar = 'G';
-                else if (message.model === 'llama') avatarChar = 'L';
-                else if (message.model === 'openai') avatarChar = 'O';
-                else avatarChar = 'A';
-            }
-            avatarDiv.textContent = avatarChar;
-            
-            const bodyDiv = document.createElement('div');
-            bodyDiv.className = 'message-body';
-            
-            if (message.role === 'user') {
-                // Use displayContent for user message text part.
-                bodyDiv.textContent = message.displayContent || message.content;
-                
+            let content = '';
+            if (isUser) {
+                content = escapeHtml(message.displayContent || message.content);
                 if (message.fileInfo && message.fileInfo.length > 0) {
-                    const fileInfoDiv = document.createElement('div');
-                    fileInfoDiv.style.marginTop = '8px';
-                    fileInfoDiv.style.fontSize = '0.9em';
-                    fileInfoDiv.style.opacity = '0.8';
-                    fileInfoDiv.innerHTML = `📎 ${message.fileInfo.map(f => escapeHtml(f.name)).join(', ')}`;
-                    bodyDiv.appendChild(fileInfoDiv);
+                    content += `<div class="mt-2 small opacity-75">📎 ${message.fileInfo.map(f => escapeHtml(f.name)).join(', ')}</div>`;
                 }
-            } else { // Assistant message
+            } else {
                 if (message.content) {
                     try {
-                        bodyDiv.innerHTML = marked.parse(message.content);
-                        requestAnimationFrame(() => addCodeActionsToBubble(bodyDiv));
+                        content = marked.parse(message.content);
                     } catch (e) {
-                        bodyDiv.textContent = message.content; // Fallback to plain text
+                        content = escapeHtml(message.content);
                     }
                 } else {
-                    bodyDiv.innerHTML = '<span class="streaming-indicator">▌</span>'; // Placeholder for streaming
+                    content = '<span class="streaming-indicator">▌</span>';
                 }
             }
             
-            contentDiv.appendChild(avatarDiv);
-            contentDiv.appendChild(bodyDiv);
-            messageDiv.appendChild(contentDiv);
+            messageDiv.innerHTML = `
+                <div class="message-avatar rounded ${avatarClass} text-white d-flex align-items-center justify-content-center me-3">
+                    ${avatarText}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="message-body">${content}</div>
+                </div>
+            `;
             
             return messageDiv;
         }
@@ -1670,19 +1046,18 @@
             const bodyDiv = messageDiv.querySelector('.message-body');
             if (!bodyDiv) return;
             
-            if (isStreaming && content) { // Continuously update content as text for performance
-                bodyDiv.textContent = content; // Simpler update while streaming
-                 // Add blinking cursor if streaming and content is not empty
+            if (isStreaming && content) {
+                bodyDiv.textContent = content;
                 if (!bodyDiv.querySelector('.streaming-indicator')) {
                     const indicator = document.createElement('span');
                     indicator.className = 'streaming-indicator';
                     indicator.textContent = '▌';
                     bodyDiv.appendChild(indicator);
                 }
-            } else { // Final render with Markdown
+            } else {
                 try {
                     bodyDiv.innerHTML = marked.parse(content || '[Empty Response]');
-                    addCodeActionsToBubble(bodyDiv); // Add copy/download buttons to code blocks
+                    addCodeActionsToBubble(bodyDiv);
                 } catch (e) {
                     bodyDiv.textContent = content || '[Error rendering response]';
                 }
@@ -1691,11 +1066,10 @@
             scrollToBottom();
         }
 
-
         function addCodeActionsToBubble(container) {
             const preBlocks = container.querySelectorAll('pre');
             preBlocks.forEach(pre => {
-                if (pre.querySelector('.code-actions')) return; // Already added
+                if (pre.querySelector('.code-actions')) return;
                 
                 const codeElement = pre.querySelector('code');
                 if (!codeElement) return;
@@ -1705,19 +1079,16 @@
                 
                 const copyButton = document.createElement('button');
                 copyButton.textContent = 'Copy';
-                copyButton.className = 'code-action-button copy-code-button';
-                copyButton.title = 'Copy code to clipboard';
+                copyButton.className = 'btn btn-sm btn-outline-secondary copy-code-button me-1';
                 
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = 'Download';
-                downloadButton.className = 'code-action-button download-code-button';
-                downloadButton.title = 'Download code as file';
+                downloadButton.className = 'btn btn-sm btn-outline-secondary download-code-button';
                 
                 actionsContainer.appendChild(copyButton);
                 actionsContainer.appendChild(downloadButton);
-                pre.insertBefore(actionsContainer, pre.firstChild); // Add to the top of <pre>
+                pre.insertBefore(actionsContainer, pre.firstChild);
                 
-                // Ensure highlighting is applied if not already
                 if (!codeElement.classList.contains('hljs')) {
                     try {
                         hljs.highlightElement(codeElement);
@@ -1734,11 +1105,14 @@
             if (!code) return;
             
             navigator.clipboard.writeText(code.textContent || '').then(() => {
+                const originalText = button.textContent;
                 button.textContent = 'Copied!';
-                button.classList.add('copied');
+                button.classList.add('btn-success');
+                button.classList.remove('btn-outline-secondary');
                 setTimeout(() => {
-                    button.textContent = 'Copy';
-                    button.classList.remove('copied');
+                    button.textContent = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-secondary');
                 }, 2000);
             }).catch(err => {
                 console.error('Failed to copy code:', err);
@@ -1753,13 +1127,12 @@
             
             const codeContent = code.textContent || '';
             let language = 'txt';
-            // Extract language from class e.g. "language-python"
             const langClass = Array.from(code.classList).find(cls => cls.startsWith('language-'));
             if (langClass) {
-                language = langClass.replace('language-', '').split(' ')[0]; // Take first part if multiple (e.g. "language-python python3")
+                language = langClass.replace('language-', '').split(' ')[0];
             }
             
-            const extensionMap = { /* As before */ 
+            const extensionMap = {
                 javascript: '.js', js: '.js', python: '.py', py: '.py', html: '.html', css: '.css',
                 json: '.json', xml: '.xml', yaml: '.yaml', yml: '.yaml', markdown: '.md', md: '.md',
                 java: '.java', cpp: '.cpp', c: '.c', csharp: '.cs', cs: '.cs', go: '.go',
@@ -1770,7 +1143,7 @@
             const extension = extensionMap[language.toLowerCase()] || `.${language}` || '.txt';
             const filename = `code-snippet${extension}`;
             
-            const blob = new Blob([codeContent], { type: 'text/plain;charset=utf-f8' });
+            const blob = new Blob([codeContent], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -1781,7 +1154,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // Session Management (Existing, should be fine)
+        // Session Management
         function getSessionIndex() {
             try {
                 const indexJson = localStorage.getItem(SESSION_INDEX_KEY);
@@ -1807,15 +1180,15 @@
             const sessions = getSessionIndex();
             elements.sessionsList.innerHTML = '';
             
-            sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by most recent
+            sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             sessions.forEach(session => {
                 const sessionItem = document.createElement('div');
                 sessionItem.className = 'session-item';
                 sessionItem.dataset.sessionId = session.id;
                 sessionItem.innerHTML = `
-                    <span>${escapeHtml(session.name)}</span>
-                    <button class="delete-btn" title="Delete session">&times;</button>
+                    <span class="text-truncate me-2">${escapeHtml(session.name)}</span>
+                    <button class="btn btn-sm btn-outline-danger delete-btn">&times;</button>
                 `;
                 
                 if (session.id === currentSessionId) {
@@ -1830,7 +1203,7 @@
 
         function startNewSession() {
             if (currentAbortController) {
-                handleStopGeneration(); // Abort any ongoing generation
+                currentAbortController.abort();
             }
             
             chatHistory = [];
@@ -1842,13 +1215,11 @@
             autoResizeTextarea(elements.chatInput);
             showStatus("", false);
             updateSessionButtonState();
-            if(!currentAbortController) resetSendButton(); // Reset if not already reset by stop
+            resetSendButton();
             
             document.querySelectorAll('.session-item.active').forEach(item => {
                 item.classList.remove('active');
             });
-            
-            closeMobileSidebar();
         }
 
         function handleSaveSession() {
@@ -1866,7 +1237,7 @@
             }
             
             const sessionName = prompt("Enter a name for this session:", defaultName);
-            if (!sessionName) return; // User cancelled
+            if (!sessionName) return;
             
             const trimmedName = sessionName.trim();
             if (!trimmedName) {
@@ -1878,46 +1249,43 @@
                 let sessionIdToSave = currentSessionId;
                 const now = Date.now();
                 
-                if (!sessionIdToSave) { // New session
+                if (!sessionIdToSave) {
                     sessionIdToSave = `${SESSION_DATA_PREFIX}${now}-${Math.random().toString(36).slice(2, 9)}`;
                     sessions.push({ id: sessionIdToSave, name: trimmedName, timestamp: now });
-                    currentSessionId = sessionIdToSave; // Set current ID for this new saved session
-                } else { // Existing session
+                    currentSessionId = sessionIdToSave;
+                } else {
                     const existingIndex = sessions.findIndex(s => s.id === sessionIdToSave);
                     if (existingIndex > -1) {
                         sessions[existingIndex].name = trimmedName;
-                        sessions[existingIndex].timestamp = now; // Update timestamp
-                    } else { // Should not happen if currentSessionId is set from a loaded session
+                        sessions[existingIndex].timestamp = now;
+                    } else {
                         sessions.push({ id: sessionIdToSave, name: trimmedName, timestamp: now });
                     }
                 }
                 
                 localStorage.setItem(`${SESSION_DATA_PREFIX}${sessionIdToSave}`, JSON.stringify(chatHistory));
-                saveSessionIndex(sessions); // Save updated index
-                populateSessions(); // Re-render session list
+                saveSessionIndex(sessions);
+                populateSessions();
                 showStatus("Session saved", false);
                 
             } catch (e) {
                 console.error("Error saving session:", e);
-                showStatus("Error saving session (check console for details)", true);
-                if (e.name === 'QuotaExceededError') {
-                    showStatus("Local storage quota exceeded. Cannot save session.", true);
-                }
+                showStatus("Error saving session", true);
             }
         }
 
         function handleLoadSession(sessionId) {
-            if (sessionId === currentSessionId && chatHistory.length > 0) return; // Already loaded or current unsaved
+            if (sessionId === currentSessionId && chatHistory.length > 0) return;
             
             try {
                 const historyJson = localStorage.getItem(`${SESSION_DATA_PREFIX}${sessionId}`);
-                if (!historyJson) throw new Error("Session data not found in local storage");
+                if (!historyJson) throw new Error("Session data not found");
                 
                 const loadedHistory = JSON.parse(historyJson);
                 if (!Array.isArray(loadedHistory)) throw new Error("Invalid session data format");
                 
                 if (currentAbortController) {
-                     handleStopGeneration();
+                    currentAbortController.abort();
                 }
                 
                 chatHistory = loadedHistory;
@@ -1935,10 +1303,10 @@
                 
                 renderChatHistory();
                 showStatus("Session loaded", false);
-                populateSessions(); // To highlight the active session
+                populateSessions();
                 scrollToBottom();
-                if(!currentAbortController) resetSendButton();
-                // Infer model type from last message if possible, or default
+                resetSendButton();
+                
                 const lastAssistantMessage = chatHistory.slice().reverse().find(m => m.role === 'assistant');
                 if (lastAssistantMessage && lastAssistantMessage.model) {
                     switchModel(lastAssistantMessage.model);
@@ -1947,7 +1315,7 @@
             } catch (e) {
                 console.error("Error loading session:", e);
                 showStatus("Error loading session", true);
-                startNewSession(); // Fallback to a new session state
+                startNewSession();
             }
         }
 
@@ -1956,7 +1324,7 @@
             const sessionToDelete = sessions.find(s => s.id === sessionId);
             if (!sessionToDelete) return;
             
-            if (!confirm(`Are you sure you want to delete session "${escapeHtml(sessionToDelete.name)}"? This cannot be undone.`)) return;
+            if (!confirm(`Are you sure you want to delete session "${sessionToDelete.name}"? This cannot be undone.`)) return;
             
             try {
                 localStorage.removeItem(`${SESSION_DATA_PREFIX}${sessionId}`);
@@ -1964,7 +1332,7 @@
                 saveSessionIndex(updatedSessions);
                 
                 if (currentSessionId === sessionId) {
-                    startNewSession(); // If current session deleted, start a new one
+                    startNewSession();
                 }
                 
                 populateSessions();
@@ -1976,18 +1344,17 @@
             }
         }
 
-
-        // Import/Export (Existing, should be fine)
+        // Import/Export
         function handleExportAll() {
             const sessions = getSessionIndex();
             if (sessions.length === 0) {
                 showStatus("No chats to export.", true);
                 return;
             }
+            
             const exportData = {
-                version: "1.1", // Increment version if format changes
+                version: "1.1",
                 exportDate: new Date().toISOString(),
-                // No longer storing global modelType here, it's per session or per message
                 sessions: []
             };
             
@@ -1997,10 +1364,10 @@
                     try {
                         const history = JSON.parse(historyJson);
                         exportData.sessions.push({
-                            id: sessionMeta.id, // Exporting original ID
+                            id: sessionMeta.id,
                             name: sessionMeta.name,
                             timestamp: sessionMeta.timestamp,
-                            history: history // history now contains model per message
+                            history: history
                         });
                     } catch (e) {
                         console.error(`Error parsing session ${sessionMeta.id} for export:`, e);
@@ -2012,7 +1379,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `unified-chat-export-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `totum-chat-export-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -2030,7 +1397,7 @@
                 try {
                     const importData = JSON.parse(e.target.result);
                     if (!importData.sessions || !Array.isArray(importData.sessions)) {
-                        throw new Error("Invalid import file format: 'sessions' array not found.");
+                        throw new Error("Invalid import file format");
                     }
                     
                     const existingSessions = getSessionIndex();
@@ -2038,10 +1405,8 @@
                     let skippedCount = 0;
                     
                     importData.sessions.forEach(sessionData => {
-                        // Check if session ID already exists to prevent duplicates from re-import
                         const newSessionId = sessionData.id || `${SESSION_DATA_PREFIX}${sessionData.timestamp || Date.now()}-${Math.random().toString(36).slice(2,9)}`;
                         if (existingSessions.find(s => s.id === newSessionId)) {
-                            console.warn(`Skipping import of session "${sessionData.name}", ID "${newSessionId}" already exists.`);
                             skippedCount++;
                             return;
                         }
@@ -2052,7 +1417,6 @@
                             timestamp: sessionData.timestamp || Date.now()
                         });
                         
-                        // Ensure history messages have IDs if they are missing (for older exports)
                         (sessionData.history || []).forEach((msg, idx) => {
                             if (!msg.id) msg.id = `msg-imported-${idx}-${Date.now()}`;
                         });
@@ -2064,7 +1428,7 @@
                     saveSessionIndex(existingSessions);
                     populateSessions();
                     let importStatusMsg = `Imported ${importedCount} sessions.`;
-                    if (skippedCount > 0) importStatusMsg += ` Skipped ${skippedCount} (already exist).`;
+                    if (skippedCount > 0) importStatusMsg += ` Skipped ${skippedCount}.`;
                     showStatus(importStatusMsg, false);
                     
                 } catch (e) {
@@ -2074,12 +1438,12 @@
             };
             
             reader.readAsText(file);
-            event.target.value = ''; // Clear file input for re-selection
+            event.target.value = '';
         }
 
         // UI Helpers
         function updateSendButtonState() {
-            if (currentAbortController) { // If currently generating, stop button is active
+            if (currentAbortController) {
                 elements.sendButton.disabled = false;
                 return;
             }
@@ -2107,7 +1471,7 @@
             elements.saveSessionBtn.disabled = chatHistory.length === 0 || currentAbortController !== null;
         }
 
-        async function updateTokenCount() { // Specific to Gemini for now
+        async function updateTokenCount() {
             if (currentModelType !== 'gemini' || chatHistory.length === 0) {
                 elements.tokenCountValue.textContent = '0';
                 return;
@@ -2127,13 +1491,18 @@
                 const contentsForApi = chatHistory.map(msg => {
                     const role = msg.role === 'user' ? 'user' : 'model';
                     const parts = [{ text: msg.displayContent || msg.content }];
-                     if (msg.role === 'user' && msg.fileInfo && Array.isArray(msg.fileInfo)) {
+                    if (msg.role === 'user' && msg.fileInfo && Array.isArray(msg.fileInfo)) {
                         msg.fileInfo.forEach(file => {
                             if (file.data && file.data.startsWith('data:')) {
                                 const [header, base64Data] = file.data.split(',');
                                 const mimeType = header.match(/:(.*?);/)?.[1] || file.type;
                                 if (base64Data && mimeType) {
-                                     parts.push({ inlineData: { mimeType: mimeType, data: base64Data } });
+                                    parts.push({
+                                        inlineData: {
+                                            mimeType: mimeType,
+                                            data: base64Data
+                                        }
+                                    });
                                 }
                             }
                         });
@@ -2164,8 +1533,8 @@
         }
 
         function autoResizeTextarea(textarea) {
-            textarea.style.height = 'auto'; // Temporarily shrink to get scrollHeight
-            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px'; // Max height 200px
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
         }
 
         function scrollToBottom() {
@@ -2174,33 +1543,120 @@
             });
         }
 
-        function toggleMobileSidebar() {
-            elements.sidebar.classList.toggle('open');
-        }
-
-        function closeMobileSidebar() {
-            if (window.innerWidth <= 768) { // Only close if on mobile view
-                elements.sidebar.classList.remove('open');
-            }
-        }
-
         function showStatus(message, isError = false, duration = 3000) {
             elements.statusBar.textContent = message;
-            elements.statusBar.classList.remove('error', 'info'); // Remove warning if it existed
-            if (isError) {
-                elements.statusBar.classList.add('error');
-            } else if (message) { // Only add info class if there's a non-error message
-                elements.statusBar.classList.add('info');
-            }
-
-            if (message && duration > 0) { // Clear status after a delay if message is not empty
+            elements.statusBar.className = `text-${isError ? 'danger' : 'success'}`;
+            
+            if (message && duration > 0) {
                 setTimeout(() => {
-                    if (elements.statusBar.textContent === message) { // Only clear if it's the same message
+                    if (elements.statusBar.textContent === message) {
                         elements.statusBar.textContent = '';
-                        elements.statusBar.classList.remove('error', 'info');
+                        elements.statusBar.className = 'text-muted';
                     }
                 }, duration);
             }
+        }
+
+        // Theme Management
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            setTheme(savedTheme);
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            
+            const isDark = theme === 'dark';
+            document.getElementById('highlight-theme').href = 
+                `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github${isDark ? '-dark' : ''}.min.css`;
+            elements.themeSwitcher.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', theme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        }
+
+        // Config Management
+        function loadConfig() {
+            const shouldRemember = localStorage.getItem('rememberUnifiedConfig') === 'true';
+            elements.rememberConfig.checked = shouldRemember;
+            
+            currentModelType = localStorage.getItem('unifiedModelType') || 'gemini';
+
+            if (shouldRemember) {
+                elements.geminiApiKey.value = localStorage.getItem('unifiedGeminiApiKey') || '';
+                elements.llamaServerUrl.value = localStorage.getItem('unifiedLlamaServerUrl') || 'http://127.0.0.1:8080';
+                elements.openaiApiKey.value = localStorage.getItem('unifiedOpenAIApiKey') || '';
+                elements.temperature.value = localStorage.getItem('unifiedTemperature') || '0.7';
+                elements.maxTokens.value = localStorage.getItem('unifiedMaxTokens') || '2048';
+                elements.topP.value = localStorage.getItem('unifiedTopP') || '0.95';
+                elements.topK.value = localStorage.getItem('unifiedTopK') || '40';
+                elements.stopSequences.value = localStorage.getItem('unifiedStopSequences') || 'USER:, \\nUSER:, <|user|>';
+            }
+        }
+
+        function saveConfig() {
+            localStorage.setItem('unifiedModelType', currentModelType);
+            if (!elements.rememberConfig.checked) return;
+            
+            localStorage.setItem('unifiedGeminiApiKey', elements.geminiApiKey.value);
+            localStorage.setItem('unifiedLlamaServerUrl', elements.llamaServerUrl.value);
+            localStorage.setItem('unifiedOpenAIApiKey', elements.openaiApiKey.value);
+            localStorage.setItem('unifiedTemperature', elements.temperature.value);
+            localStorage.setItem('unifiedMaxTokens', elements.maxTokens.value);
+            localStorage.setItem('unifiedTopP', elements.topP.value);
+            localStorage.setItem('unifiedTopK', elements.topK.value);
+            localStorage.setItem('unifiedStopSequences', elements.stopSequences.value);
+        }
+
+        function handleRememberConfigChange() {
+            localStorage.setItem('rememberUnifiedConfig', elements.rememberConfig.checked);
+            
+            if (elements.rememberConfig.checked) {
+                saveConfig();
+            } else {
+                const keysToRemove = [
+                    'unifiedGeminiApiKey', 'unifiedLlamaServerUrl', 'unifiedOpenAIApiKey',
+                    'unifiedTemperature', 'unifiedMaxTokens', 'unifiedTopP', 'unifiedTopK', 'unifiedStopSequences'
+                ];
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+            }
+        }
+
+        function handleGeminiApiKeyInput() {
+            if (elements.geminiApiKey.value.trim()) {
+                fetchGeminiModels();
+            } else {
+                updateModelDropdown(elements.geminiModelSelect, [], "-- Enter API Key First --");
+                geminiModelsLoaded = false;
+            }
+            saveConfig();
+        }
+
+        function handleOpenAIApiKeyInput() {
+            if (elements.openaiApiKey.value.trim()) {
+                fetchOpenAIModels();
+            } else {
+                updateModelDropdown(elements.openaiModelSelect, [], "-- Enter API Key First --");
+                openaiModelsLoaded = false;
+            }
+            saveConfig();
+        }
+
+        // Utility Functions
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
 
         function escapeHtml(unsafe) {
@@ -2222,104 +1678,9 @@
             }
         }
 
-        // Theme Management (Existing)
-        function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
-            setTheme(savedTheme);
-        }
-
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme); // For potential future CSS rules using this
-            
-            // Update root variables for light/dark mode
-            if (theme === 'light') {
-                document.documentElement.style.setProperty('--bg', '#ffffff');
-                document.documentElement.style.setProperty('--bg-light', '#f0f0f0');
-                document.documentElement.style.setProperty('--text', '#212121');
-                document.documentElement.style.setProperty('--text-dim', '#555555');
-                document.documentElement.style.setProperty('--border', '#dddddd');
-                document.querySelector('.sidebar').style.background = '#f9f9f9'; // Example specific adjustment
-                document.getElementById('highlight-theme').href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
-                elements.themeSwitcher.textContent = '🌙'; 
-            } else { // dark
-                document.documentElement.style.setProperty('--bg', '#212121');
-                document.documentElement.style.setProperty('--bg-light', '#2a2a2a');
-                document.documentElement.style.setProperty('--text', '#ececf1');
-                document.documentElement.style.setProperty('--text-dim', '#a9a9a9');
-                document.documentElement.style.setProperty('--border', '#444444');
-                document.querySelector('.sidebar').style.background = '#171717';
-                document.getElementById('highlight-theme').href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css';
-                elements.themeSwitcher.textContent = '☀️';
-            }
-            localStorage.setItem('theme', theme);
-        }
-
-        function toggleTheme() {
-            const currentTheme = localStorage.getItem('theme') || 'dark';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            setTheme(newTheme);
-        }
-
-        // Config Management
-        function loadConfig() {
-            const shouldRemember = localStorage.getItem('rememberUnifiedConfig') === 'true';
-            elements.rememberConfig.checked = shouldRemember;
-            
-            // Default model type
-            currentModelType = localStorage.getItem('unifiedModelType') || 'gemini';
-
-            if (shouldRemember) {
-                // Gemini
-                elements.geminiApiKey.value = localStorage.getItem('unifiedGeminiApiKey') || '';
-                // Llama
-                elements.llamaServerUrl.value = localStorage.getItem('unifiedLlamaServerUrl') || 'http://127.0.0.1:8080';
-                // OpenAI
-                elements.openaiApiKey.value = localStorage.getItem('unifiedOpenAIApiKey') || '';
-                
-                // Settings
-                elements.temperature.value = localStorage.getItem('unifiedTemperature') || '0.7';
-                elements.maxTokens.value = localStorage.getItem('unifiedMaxTokens') || '2048';
-                elements.topP.value = localStorage.getItem('unifiedTopP') || '0.95';
-                elements.topK.value = localStorage.getItem('unifiedTopK') || '40';
-                elements.stopSequences.value = localStorage.getItem('unifiedStopSequences') || 'USER:, \nUSER:, <|user|>';
-            }
-        }
-
-        function saveConfig() {
-            localStorage.setItem('unifiedModelType', currentModelType);
-            if (!elements.rememberConfig.checked) return;
-            
-            localStorage.setItem('unifiedGeminiApiKey', elements.geminiApiKey.value);
-            localStorage.setItem('unifiedLlamaServerUrl', elements.llamaServerUrl.value);
-            localStorage.setItem('unifiedOpenAIApiKey', elements.openaiApiKey.value);
-
-            localStorage.setItem('unifiedTemperature', elements.temperature.value);
-            localStorage.setItem('unifiedMaxTokens', elements.maxTokens.value);
-            localStorage.setItem('unifiedTopP', elements.topP.value);
-            localStorage.setItem('unifiedTopK', elements.topK.value);
-            localStorage.setItem('unifiedStopSequences', elements.stopSequences.value);
-        }
-
-        function handleRememberConfigChange() {
-            localStorage.setItem('rememberUnifiedConfig', elements.rememberConfig.checked);
-            
-            if (elements.rememberConfig.checked) {
-                saveConfig(); // Save current values
-            } else {
-                // Clear saved config (except modelType which is always saved)
-                localStorage.removeItem('unifiedGeminiApiKey');
-                localStorage.removeItem('unifiedLlamaServerUrl');
-                localStorage.removeItem('unifiedOpenAIApiKey');
-                localStorage.removeItem('unifiedTemperature');
-                localStorage.removeItem('unifiedMaxTokens');
-                localStorage.removeItem('unifiedTopP');
-                localStorage.removeItem('unifiedTopK');
-                localStorage.removeItem('unifiedStopSequences');
-            }
-        }
-
         // Initialize the app
         initialize();
     </script>
 </body>
 </html>
+                
