@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Totum Chat</title>
+    <title>Totum Chat - Improved</title>
+    <!-- Improved version with session syncing and timestamps -->
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -998,6 +999,14 @@
             });
             
             updateSessionButtonState();
+const sessionsListMobile = document.getElementById('sessionsListMobile');
+    if (sessionsListMobile) {
+        sessionsListMobile.innerHTML = '';
+        elements.sessionsList.querySelectorAll('.session-item').forEach(item => {
+            const clone = item.cloneNode(true);
+            sessionsListMobile.appendChild(clone);
+        });
+    }
         }
 
         function createMessageElement(message) {
@@ -1032,7 +1041,9 @@
                     ${avatarText}
                 </div>
                 <div class="flex-grow-1">
-                    <div class="message-body">${content}</div>
+                    <div class="message-body">${content}
+<small class="text-muted d-block mt-1">${new Date(message.timestamp).toLocaleString()}</small>
+</div>
                 </div>
             `;
             
@@ -1199,6 +1210,14 @@
             });
             
             updateSessionButtonState();
+const sessionsListMobile = document.getElementById('sessionsListMobile');
+    if (sessionsListMobile) {
+        sessionsListMobile.innerHTML = '';
+        elements.sessionsList.querySelectorAll('.session-item').forEach(item => {
+            const clone = item.cloneNode(true);
+            sessionsListMobile.appendChild(clone);
+        });
+    }
         }
 
         function startNewSession() {
@@ -1215,6 +1234,14 @@
             autoResizeTextarea(elements.chatInput);
             showStatus("", false);
             updateSessionButtonState();
+const sessionsListMobile = document.getElementById('sessionsListMobile');
+    if (sessionsListMobile) {
+        sessionsListMobile.innerHTML = '';
+        elements.sessionsList.querySelectorAll('.session-item').forEach(item => {
+            const clone = item.cloneNode(true);
+            sessionsListMobile.appendChild(clone);
+        });
+    }
             resetSendButton();
             
             document.querySelectorAll('.session-item.active').forEach(item => {
